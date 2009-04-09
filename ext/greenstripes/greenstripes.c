@@ -559,6 +559,210 @@ static VALUE search_did_you_mean(VALUE self)
   return d ? rb_str_new2(d) : Qnil;
 }
 
+/*
+ * call-seq: artist.loaded? -> true or false
+ *
+ * Returns true if the artist is loaded, false otherwise.
+ */
+static VALUE artist_loaded(VALUE self)
+{
+  sp_artist *artist;
+  Data_Get_Struct(self, sp_artist, artist);
+  return sp_artist_is_loaded(artist) ? Qtrue : Qfalse;
+}
+
+/*
+ * call-seq: artist.name -> string or nil
+ *
+ * Returns the artist's name.
+ */
+static VALUE artist_name(VALUE self)
+{
+  sp_artist *artist;
+  Data_Get_Struct(self, sp_artist, artist);
+  const char *name = sp_artist_name(artist);
+  return name ? rb_str_new2(name) : Qnil;
+}
+
+/*
+ * call-seq: album.loaded? -> true or false
+ *
+ * Returns true if the album is loaded, false otherwise.
+ */
+static VALUE album_loaded(VALUE self)
+{
+  sp_album *album;
+  Data_Get_Struct(self, sp_album, album);
+  return sp_album_is_loaded(album) ? Qtrue : Qfalse;
+}
+
+/*
+ * call-seq: album.artist -> artist or nil
+ *
+ * Returns the album's artist.
+ */
+static VALUE album_artist(VALUE self)
+{
+  sp_album *album;
+  Data_Get_Struct(self, sp_album, album);
+  sp_artist *artist = sp_album_artist(album);
+  return artist ? Data_Wrap_Struct(class_artist, NULL, NULL, artist) : Qnil;
+}
+
+/*
+ * call-seq: album.name -> string or nil
+ *
+ * Returns the album's name.
+ */
+static VALUE album_name(VALUE self)
+{
+  sp_album *album;
+  Data_Get_Struct(self, sp_album, album);
+  const char *name = sp_album_name(album);
+  return name ? rb_str_new2(name) : Qnil;
+}
+
+/*
+ * call-seq: album.year -> fixnum or nil
+ *
+ * Returns the year the album was released.
+ */
+static VALUE album_year(VALUE self)
+{
+  sp_album *album;
+  Data_Get_Struct(self, sp_album, album);
+  int year = sp_album_year(album);
+  return year ? INF2FIX(year) : Qnil;
+}
+
+/*
+ * call-seq: track.loaded? -> true or false
+ *
+ * Returns true if the track is loaded, false otherwise.
+ */
+static VALUE track_loaded(VALUE self)
+{
+  sp_track *track;
+  Data_Get_Struct(self, sp_track, track);
+  return sp_track_is_loaded(track) ? Qtrue : Qfalse;
+}
+
+/*
+ * call-seq: track.error -> error
+ *
+ * Returns one of the constants defined in Error.
+ */
+static VALUE track_error(VALUE self)
+{
+  sp_track *track;
+  Data_Get_Struct(self, sp_track, track);
+  sp_error error = sp_track_error(track);
+  return INT2FIX(error);
+}
+
+/*
+ * call-seq: track.num_artists -> fixnum or nil
+ *
+ */
+static VALUE track_num_artists(VALUE self)
+{
+  sp_track *track;
+  Data_Get_Struct(self, sp_track, track);
+  int n = sp_track_num_artists(track);
+  return n ? INT2FIX(n) : Qnil;
+}
+
+/*
+ * call-seq: track.artist(index) -> artist or nil
+ *
+ */
+static VALUE track_artist(VALUE self, VALUE index)
+{
+  sp_track *track;
+  Data_Get_Struct(self, sp_track, track);
+  int i = FIX2INT(index);
+  sp_artist *artist = sp_track_artist(track, i);
+  return artist ? Data_Wrap_Struct(class_artist, NULL, NULL, artist) : Qnil;
+}
+
+/*
+ * call-seq: track.album -> album or nil
+ *
+ * Returns the track's album.
+ */
+static VALUE track_album(VALUE self)
+{
+  sp_track *track;
+  Data_Get_Struct(self, sp_track, track);
+  sp_album *album = sp_track_album(track);
+  return album ? Data_Wrap_Struct(class_album, NULL, NULL, album) : Qnil;
+}
+
+/*
+ * call-seq: track.name -> string or nil
+ *
+ * Returns the track's name.
+ */
+static VALUE track_name(VALUE self)
+{
+  sp_track *track;
+  Data_Get_Struct(self, sp_track, track);
+  const char *name = sp_track_name(track);
+  return name ? rb_str_new2(name) : Qnil;
+}
+
+/*
+ * call-seq: track.duration -> fixnum
+ *
+ * Returns the track's duration in milliseconds.
+ */
+static VALUE track_duration(VALUE self)
+{
+  sp_track *track;
+  Data_Get_Struct(self, sp_track, track);
+  int d = sp_track_duration(track);
+  return INT2FIX(d);
+}
+
+/*
+ * call-seq: track.popularity -> fixnum
+ *
+ * Returns the track's popularity as a number in the range [0, 100].
+ */
+static VALUE track_popularity(VALUE self)
+{
+  sp_track *track;
+  Data_Get_Struct(self, sp_track, track);
+  int p = sp_track_popularity(track);
+  return INT2FIX(p);
+}
+
+/*
+ * call-seq: track.disc -> fixnum or nil
+ *
+ * Returns the index of the disc the track is on, counting from 1.
+ */
+static VALUE track_disc(VALUE self)
+{
+  sp_track *track;
+  Data_Get_Struct(self, sp_track, track);
+  int d = sp_track_disc(track);
+  return d ? INT2FIX(d) : Qnil;
+}
+
+/*
+ * call-seq: track.index -> fixnum or nil
+ *
+ * Returns the index of the track on its disc, counting from 1.
+ */
+static VALUE track_index(VALUE self)
+{
+  sp_track *track;
+  Data_Get_Struct(self, sp_track, track);
+  int i = sp_track_index(track);
+  return i ? INT2FIX(i) : Qnil;
+}
+
 static void link_free(void *link)
 {
   sp_link_release(link);
@@ -764,16 +968,32 @@ void Init_greenstripes()
    * Artist
    */
   class_artist = rb_define_class_under(module_greenstripes, "Artist", rb_cObject);
+  rb_define_method(class_artist, "loaded?", artist_loaded, 0);
+  rb_define_method(class_artist, "name", artist_name, 0);
 
   /*
    * Album
    */
   class_album = rb_define_class_under(module_greenstripes, "Album", rb_cObject);
+  rb_define_method(class_album, "loaded?", album_loaded, 0);
+  rb_define_method(class_album, "artist", album_artist, 0);
+  rb_define_method(class_album, "name", album_name, 0);
+  rb_define_method(class_album, "year", album_year, 0);
 
   /*
    * Track
    */
   class_track = rb_define_class_under(module_greenstripes, "Track", rb_cObject);
+  rb_define_method(class_track, "loaded?", track_loaded, 0);
+  rb_define_method(class_track, "error", track_error, 0);
+  rb_define_method(class_track, "num_artists", track_num_artists, 0);
+  rb_define_method(class_track, "artist", track_artist, 1);
+  rb_define_method(class_track, "album", track_album, 0);
+  rb_define_method(class_track, "name", track_name, 0);
+  rb_define_method(class_track, "duration", track_duration, 0);
+  rb_define_method(class_track, "popularity", track_popularity, 0);
+  rb_define_method(class_track, "disc", track_disc, 0);
+  rb_define_method(class_track, "index", track_index, 0);
 
   /*
    * Link
