@@ -26,6 +26,13 @@ module GreenStripes
     has_link
   end
 
+  class Search
+    has_link
+
+    def initialize(*args) # :nodoc:
+    end
+  end
+
   class Artist
     has_link
   end

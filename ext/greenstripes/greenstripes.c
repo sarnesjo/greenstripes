@@ -56,6 +56,11 @@ static void log_message_callback(sp_session *session, const char *data)
   //fprintf(stderr, "log_message_callback: %s\n", data);
 }
 
+static void search_complete_callback(sp_search *result, void *userdata)
+{
+  //fprintf(stderr, "search_complete_callback\n");
+}
+
 /*
  * call-seq: Session.new(application_key, user_agent, cache_location, settings_location) -> session or nil
  *
@@ -377,6 +382,183 @@ static VALUE playlist_pending_changes(VALUE self)
   return sp_playlist_has_pending_changes(playlist) ? Qtrue : Qfalse;
 }
 
+static void search_free(void *search)
+{
+  sp_search_release(search);
+}
+
+/*
+ * call-seq: Search.new(session, query, offset, count) -> search or nil
+ *
+ * Returns a new search object.
+ */
+static VALUE search_new(VALUE klass, VALUE session, VALUE query, VALUE offset, VALUE count)
+{
+  // TODO: search callback should not be hardcoded
+
+  sp_session *sess;
+  Data_Get_Struct(session, sp_session, sess);
+
+  sp_search *search = NULL;
+  search = sp_search_create(sess,
+                            StringValuePtr(query),
+                            FIX2INT(offset),
+                            FIX2INT(count),
+                            search_complete_callback,
+                            NULL);
+
+  if(!search)
+    return Qnil;
+
+  VALUE search_value = Data_Wrap_Struct(class_search, NULL, search_free, search);
+  VALUE argv[4] = {session, query, offset, count};
+  rb_obj_call_init(search_value, 4, argv);
+  return search_value;
+}
+
+/*
+ * call-seq: search.loaded? -> true or false
+ *
+ * Returns true if the search object is loaded, false otherwise.
+ */
+static VALUE search_loaded(VALUE self)
+{
+  sp_search *search;
+  Data_Get_Struct(self, sp_search, search);
+  return sp_search_is_loaded(search) ? Qtrue : Qfalse;
+}
+
+/*
+ * call-seq: search.error -> error
+ *
+ * Returns one of the constants defined in Error.
+ */
+static VALUE search_error(VALUE self)
+{
+  sp_search *search;
+  Data_Get_Struct(self, sp_search, search);
+  sp_error error = sp_search_error(search);
+  return INT2FIX(error);
+}
+
+/*
+ * call-seq: search.num_artists -> fixnum or nil
+ *
+ */
+static VALUE search_num_artists(VALUE self)
+{
+  sp_search *search;
+  Data_Get_Struct(self, sp_search, search);
+  int n = sp_search_num_artists(search);
+  return (n >= 0) ? INT2FIX(n) : Qnil;
+}
+
+/*
+ * call-seq: search.artist(index) -> artist or nil
+ *
+ */
+static VALUE search_artist(VALUE self, VALUE index)
+{
+  sp_search *search;
+  Data_Get_Struct(self, sp_search, search);
+  int i = FIX2INT(index);
+  sp_artist *artist = NULL;
+  artist = sp_search_artist(search, i);
+  return artist ? Data_Wrap_Struct(class_artist, NULL, NULL, artist) : Qnil;
+}
+
+/*
+ * call-seq: search.num_albums -> fixnum or nil
+ *
+ */
+static VALUE search_num_albums(VALUE self)
+{
+  sp_search *search;
+  Data_Get_Struct(self, sp_search, search);
+  int n = sp_search_num_albums(search);
+  return (n >= 0) ? INT2FIX(n) : Qnil;
+}
+
+/*
+ * call-seq: search.album(index) -> album or nil
+ *
+ */
+static VALUE search_album(VALUE self, VALUE index)
+{
+  sp_search *search;
+  Data_Get_Struct(self, sp_search, search);
+  int i = FIX2INT(index);
+  sp_album *album = NULL;
+  album = sp_search_album(search, i);
+  return album ? Data_Wrap_Struct(class_album, NULL, NULL, album) : Qnil;
+}
+
+/*
+ * call-seq: search.num_tracks -> fixnum or nil
+ *
+ */
+static VALUE search_num_tracks(VALUE self)
+{
+  sp_search *search;
+  Data_Get_Struct(self, sp_search, search);
+  int n = sp_search_num_tracks(search);
+  return (n >= 0) ? INT2FIX(n) : Qnil;
+}
+
+/*
+ * call-seq: search.track(index) -> track or nil
+ *
+ */
+static VALUE search_track(VALUE self, VALUE index)
+{
+  sp_search *search;
+  Data_Get_Struct(self, sp_search, search);
+  int i = FIX2INT(index);
+  sp_track *track = NULL;
+  track = sp_search_track(search, i);
+  return track ? Data_Wrap_Struct(class_track, NULL, NULL, track) : Qnil;
+}
+
+/*
+ * call-seq: search.total_tracks -> fixnum or nil
+ *
+ * Returns the total number of track hits for the search query.
+ */
+static VALUE search_total_tracks(VALUE self)
+{
+  sp_search *search;
+  Data_Get_Struct(self, sp_search, search);
+  int n = sp_search_total_tracks(search);
+  return (n >= 0) ? INT2FIX(n) : Qnil;
+}
+
+/*
+ * call-seq: search.query -> string or nil
+ *
+ * Returns the query for the search object.
+ */
+static VALUE search_query(VALUE self)
+{
+  sp_search *search;
+  Data_Get_Struct(self, sp_search, search);
+  const char *q = sp_search_query(search);
+  return q ? rb_str_new2(q) : Qnil;
+}
+
+/*
+ * call-seq: search.did_you_mean -> string or nil
+ *
+ * Returns the "did you mean" suggestion for the search object, or nil if no
+ * suggestion is available.
+ */
+static VALUE search_did_you_mean(VALUE self)
+{
+  sp_search *search;
+  Data_Get_Struct(self, sp_search, search);
+  const char *d = sp_search_did_you_mean(search);
+  return d ? rb_str_new2(d) : Qnil;
+}
+
 static void link_free(void *link)
 {
   sp_link_release(link);
@@ -565,6 +747,18 @@ void Init_greenstripes()
    * Search
    */
   class_search = rb_define_class_under(module_greenstripes, "Search", rb_cObject);
+  rb_define_singleton_method(class_search, "new", search_new, 4);
+  rb_define_method(class_search, "loaded?", search_loaded, 0);
+  rb_define_method(class_search, "error", search_error, 0);
+  rb_define_method(class_search, "num_artists", search_num_artists, 0);
+  rb_define_method(class_search, "artist", search_artist, 1);
+  rb_define_method(class_search, "num_albums", search_num_albums, 0);
+  rb_define_method(class_search, "album", search_album, 1);
+  rb_define_method(class_search, "num_tracks", search_num_tracks, 0);
+  rb_define_method(class_search, "track", search_track, 1);
+  rb_define_method(class_search, "total_tracks", search_total_tracks, 0);
+  rb_define_method(class_search, "query", search_query, 0);
+  rb_define_method(class_search, "did_you_mean", search_did_you_mean, 0);
 
   /*
    * Artist

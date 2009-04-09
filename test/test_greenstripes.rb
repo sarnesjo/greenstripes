@@ -48,12 +48,9 @@ class TestGreenStripes < Test::Unit::TestCase
   def test_search
     search = GreenStripes::Search.new(@session, 'a', 0, 1)
     @session.process_events until search.loaded?
-    assert_not_nil(search.artists)
-    assert_not_equal(0, search.artists.size)
-    assert_not_nil(search.albums)
-    assert_not_equal(0, search.albums.size)
-    assert_not_nil(search.tracks)
-    assert_not_equal(0, search.tracks.size)
+    assert_not_equal(0, search.num_artists)
+    assert_not_equal(0, search.num_albums)
+    assert_not_equal(0, search.num_tracks)
   end
 
   def test_link_from_objects
