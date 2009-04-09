@@ -13,7 +13,11 @@ static VALUE class_session;
 static VALUE class_user;
 static VALUE class_playlist_container;
 static VALUE class_playlist;
+static VALUE class_search;
+static VALUE class_artist;
+static VALUE class_album;
 static VALUE class_track;
+static VALUE class_link;
 
 // callbacks
 
@@ -373,6 +377,98 @@ static VALUE playlist_pending_changes(VALUE self)
   return sp_playlist_has_pending_changes(playlist) ? Qtrue : Qfalse;
 }
 
+static void link_free(void *link)
+{
+  sp_link_release(link);
+}
+
+/*
+ * call-seq:
+ *  Link.new(artist)   -> link
+ *  Link.new(album)    -> link
+ *  Link.new(track)    -> link
+ *  Link.new(playlist) -> link
+ *  Link.new(search)   -> link
+ *  Link.new(string)   -> link or nil
+ *
+ * Returns a new link pointing to the given resource.
+ */
+static VALUE link_new(VALUE klass, VALUE object)
+{
+  sp_link *link = NULL;
+
+  if(rb_obj_is_kind_of(object, class_artist))
+  {
+    sp_artist *a;
+    Data_Get_Struct(object, sp_artist, a);
+    link = sp_link_create_from_artist(a);
+  }
+  else if(rb_obj_is_kind_of(object, class_album))
+  {
+    sp_album *a;
+    Data_Get_Struct(object, sp_album, a);
+    link = sp_link_create_from_album(a);
+  }
+  else if(rb_obj_is_kind_of(object, class_track))
+  {
+    sp_track *t;
+    Data_Get_Struct(object, sp_track, t);
+    link = sp_link_create_from_track(t, 0); // TODO: offset
+  }
+  else if(rb_obj_is_kind_of(object, class_playlist))
+  {
+    sp_playlist *p;
+    Data_Get_Struct(object, sp_playlist, p);
+    link = sp_link_create_from_playlist(p);
+  }
+  else if(rb_obj_is_kind_of(object, class_search))
+  {
+    sp_search *s;
+    Data_Get_Struct(object, sp_search, s);
+    link = sp_link_create_from_search(s);
+  }
+  else
+  {
+    link = sp_link_create_from_string(StringValuePtr(object));
+  }
+
+  if(!link)
+    return Qnil;
+
+  VALUE link_value = Data_Wrap_Struct(class_link, NULL, link_free, link);
+  VALUE argv[1] = {object};
+  rb_obj_call_init(link_value, 1, argv);
+  return link_value;
+}
+
+/*
+ * call-seq: link.link_type -> type
+ *
+ * Returns the link type. Named link_type instead of just type to avoid
+ * overriding a method in Object.
+ */
+static VALUE link_link_type(VALUE self)
+{
+  sp_link *link;
+  Data_Get_Struct(self, sp_link, link);
+  int type = sp_link_type(link);
+  return INT2FIX(type);
+}
+
+/*
+ * call-seq: link.to_s -> string or nil
+ *
+ * Returns a string representation of the link.
+ */
+static VALUE link_to_s(VALUE self)
+{
+  sp_link *link;
+  Data_Get_Struct(self, sp_link, link);
+  char buffer[100];
+  int n = sp_link_as_string(link, buffer, 100);
+  return (n < 100) ? rb_str_new2(buffer) : Qnil;
+}
+
 // init
 
 void Init_greenstripes()
@@ -466,7 +562,30 @@ void Init_greenstripes()
   rb_define_method(class_playlist, "pending_changes?", playlist_pending_changes, 0);
 
   /*
+   * Search
+   */
+  class_search = rb_define_class_under(module_greenstripes, "Search", rb_cObject);
+
+  /*
+   * Artist
+   */
+  class_artist = rb_define_class_under(module_greenstripes, "Artist", rb_cObject);
+
+  /*
+   * Album
+   */
+  class_album = rb_define_class_under(module_greenstripes, "Album", rb_cObject);
+
+  /*
    * Track
    */
   class_track = rb_define_class_under(module_greenstripes, "Track", rb_cObject);
+
+  /*
+   * Link
+   */
+  class_link = rb_define_class_under(module_greenstripes, "Link", rb_cObject);
+  rb_define_singleton_method(class_link, "new", link_new, 1);
+  rb_define_method(class_link, "link_type", link_link_type, 0);
+  rb_define_method(class_link, "to_s", link_to_s, 0);
 }
