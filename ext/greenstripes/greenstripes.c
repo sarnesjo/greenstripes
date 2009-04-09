@@ -10,6 +10,7 @@ static VALUE module_connection_state;
 static VALUE module_link_type;
 
 static VALUE class_session;
+static VALUE class_user;
 
 // callbacks
 
@@ -154,6 +155,59 @@ static VALUE session_process_events(VALUE self)
   return INT2FIX(next_timeout);
 }
 
+/*
+ * call-seq: session.user -> user or nil
+ *
+ * Returns the user for the session.
+ */
+static VALUE session_user(VALUE self)
+{
+  sp_session *s;
+  Data_Get_Struct(self, sp_session, s);
+  sp_user *user = NULL;
+  user = sp_session_user(s);
+  return user ? Data_Wrap_Struct(class_user, NULL, NULL, user) : Qnil;
+}
+
+/*
+ * call-seq: user.loaded? -> true or false
+ *
+ * Returns true if the user is loaded, false otherwise.
+ */
+static VALUE user_loaded(VALUE self)
+{
+  sp_user *user;
+  Data_Get_Struct(self, sp_user, user);
+  return sp_user_is_loaded(user) ? Qtrue : Qfalse;
+}
+
+/*
+ * call-seq: user.canonical_name -> string or nil
+ *
+ * Returns the user's canonical name.
+ */
+static VALUE user_canonical_name(VALUE self)
+{
+  sp_user *user;
+  Data_Get_Struct(self, sp_user, user);
+  const char *name = sp_user_canonical_name(user);
+  return name ? rb_str_new2(name) : Qnil;
+}
+
+/*
+ * call-seq: user.display_name -> string or nil
+ *
+ * Returns the user's display name, or the canonical name if the display name is
+ * not known.
+ */
+static VALUE user_display_name(VALUE self)
+{
+  sp_user *user;
+  Data_Get_Struct(self, sp_user, user);
+  const char *name = sp_user_display_name(user);
+  return name ? rb_str_new2(name) : Qnil;
+}
+
 // init
 
 void Init_greenstripes()
@@ -214,4 +268,13 @@ void Init_greenstripes()
   rb_define_method(class_session, "logout", session_logout, 0);
   rb_define_method(class_session, "connection_state", session_connection_state, 0);
   rb_define_method(class_session, "process_events", session_process_events, 0);
+  rb_define_method(class_session, "user", session_user, 0);
+
+  /*
+   * User
+   */
+  class_user = rb_define_class_under(module_greenstripes, "User", rb_cObject);
+  rb_define_method(class_user, "loaded?", user_loaded, 0);
+  rb_define_method(class_user, "canonical_name", user_canonical_name, 0);
+  rb_define_method(class_user, "display_name", user_display_name, 0);
 }
