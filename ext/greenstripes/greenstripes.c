@@ -11,6 +11,9 @@ static VALUE module_link_type;
 
 static VALUE class_session;
 static VALUE class_user;
+static VALUE class_playlist_container;
+static VALUE class_playlist;
+static VALUE class_track;
 
 // callbacks
 
@@ -170,6 +173,20 @@ static VALUE session_user(VALUE self)
 }
 
 /*
+ * call-seq: session.playlist_container -> playlist_container or nil
+ *
+ * Returns the playlist container for the session.
+ */
+static VALUE session_playlist_container(VALUE self)
+{
+  sp_session *s;
+  Data_Get_Struct(self, sp_session, s);
+  sp_playlistcontainer *pc = NULL;
+  pc = sp_session_playlistcontainer(s);
+  return pc ? Data_Wrap_Struct(class_playlist_container, NULL, NULL, pc) : Qnil;
+}
+
+/*
  * call-seq: user.loaded? -> true or false
  *
  * Returns true if the user is loaded, false otherwise.
@@ -206,6 +223,154 @@ static VALUE user_display_name(VALUE self)
   Data_Get_Struct(self, sp_user, user);
   const char *name = sp_user_display_name(user);
   return name ? rb_str_new2(name) : Qnil;
+}
+
+/*
+ * call-seq: playlist_container.num_playlists -> fixnum or nil
+ *
+ */
+static VALUE playlist_container_num_playlists(VALUE self)
+{
+  sp_playlistcontainer *playlistcontainer;
+  Data_Get_Struct(self, sp_playlistcontainer, playlistcontainer);
+  int n = sp_playlistcontainer_num_playlists(playlistcontainer);
+  return (n >= 0) ? INT2FIX(n) : Qnil;
+}
+
+/*
+ * call-seq: playlist_container.playlist(index) -> playlist or nil
+ *
+ */
+static VALUE playlist_container_playlist(VALUE self, VALUE index)
+{
+  sp_playlistcontainer *playlistcontainer;
+  Data_Get_Struct(self, sp_playlistcontainer, playlistcontainer);
+  int i = FIX2INT(index);
+  sp_playlist *playlist = NULL;
+  playlist = sp_playlistcontainer_playlist(playlistcontainer, i);
+  return playlist ? Data_Wrap_Struct(class_playlist, NULL, NULL, playlist) : Qnil;
+}
+
+/*
+ * call-seq: playlist.loaded? -> true or false
+ *
+ * Returns true if the playlist is loaded, false otherwise.
+ */
+static VALUE playlist_loaded(VALUE self)
+{
+  sp_playlist *playlist;
+  Data_Get_Struct(self, sp_playlist, playlist);
+  return sp_playlist_is_loaded(playlist) ? Qtrue : Qfalse;
+}
+
+/*
+ * call-seq: playlist.name -> string or nil
+ *
+ * Returns the playlist's name.
+ */
+static VALUE playlist_name(VALUE self)
+{
+  sp_playlist *playlist;
+  Data_Get_Struct(self, sp_playlist, playlist);
+  const char *name = sp_playlist_name(playlist);
+  return name ? rb_str_new2(name) : Qnil;
+}
+
+/*
+ * call-seq: playlist.name = new_name -> string or nil
+ *
+ * Sets the playlist's name to the value of new_name.
+ */
+static VALUE playlist_name_set(VALUE self, VALUE new_name)
+{
+  sp_playlist *playlist;
+  Data_Get_Struct(self, sp_playlist, playlist);
+
+  sp_error error = sp_playlist_rename(playlist, StringValuePtr(new_name));
+
+  // TODO: throw exception instead?
+  if(error != SP_ERROR_OK)
+    return Qnil;
+
+  return new_name;
+}
+
+/*
+ * call-seq: playlist.owner -> user or nil
+ *
+ * Returns the playlist's owner.
+ */
+static VALUE playlist_owner(VALUE self)
+{
+  sp_playlist *playlist;
+  Data_Get_Struct(self, sp_playlist, playlist);
+  sp_user *user = NULL;
+  user = sp_playlist_owner(playlist);
+  return user ? Data_Wrap_Struct(class_user, NULL, NULL, user) : Qnil;
+}
+
+/*
+ * call-seq: playlist.collaborative? -> true or false
+ *
+ * Returns true if the playlist is collaborative, false otherwise.
+ */
+static VALUE playlist_collaborative(VALUE self)
+{
+  sp_playlist *playlist;
+  Data_Get_Struct(self, sp_playlist, playlist);
+  return sp_playlist_is_collaborative(playlist) ? Qtrue : Qfalse;
+}
+
+/*
+ * call-seq: playlist.collaborative = true or false -> true or false
+ *
+ * Sets the collaborative status of the playlist.
+ */
+static VALUE playlist_collaborative_set(VALUE self, VALUE collaborative)
+{
+  sp_playlist *playlist;
+  Data_Get_Struct(self, sp_playlist, playlist);
+  sp_playlist_set_collaborative(playlist, collaborative != Qnil && collaborative != Qfalse);
+  return collaborative;
+}
+
+/*
+ * call-seq: playlist.num_tracks -> fixnum or nil
+ *
+ */
+static VALUE playlist_num_tracks(VALUE self)
+{
+  sp_playlist *playlist;
+  Data_Get_Struct(self, sp_playlist, playlist);
+  int n = sp_playlist_num_tracks(playlist);
+  return (n >= 0) ? INT2FIX(n) : Qnil;
+}
+
+/*
+ * call-seq: playlist.track(index) -> track or nil
+ *
+ */
+static VALUE playlist_track(VALUE self, VALUE index)
+{
+  sp_playlist *playlist;
+  Data_Get_Struct(self, sp_playlist, playlist);
+  int i = FIX2INT(index);
+  sp_track *track = NULL;
+  track = sp_playlist_track(playlist, i);
+  return track ? Data_Wrap_Struct(class_track, NULL, NULL, track) : Qnil;
+}
+
+/*
+ * call-seq: playlist.pending_changes? -> true or false
+ *
+ * Returns true if the playlist has local changes that have not yet been
+ * acknowledged by the server, false otherwise.
+ */
+static VALUE playlist_pending_changes(VALUE self)
+{
+  sp_playlist *playlist;
+  Data_Get_Struct(self, sp_playlist, playlist);
+  return sp_playlist_has_pending_changes(playlist) ? Qtrue : Qfalse;
 }
 
 // init
@@ -269,6 +434,7 @@ void Init_greenstripes()
   rb_define_method(class_session, "connection_state", session_connection_state, 0);
   rb_define_method(class_session, "process_events", session_process_events, 0);
   rb_define_method(class_session, "user", session_user, 0);
+  rb_define_method(class_session, "playlist_container", session_playlist_container, 0);
 
   /*
    * User
@@ -277,4 +443,30 @@ void Init_greenstripes()
   rb_define_method(class_user, "loaded?", user_loaded, 0);
   rb_define_method(class_user, "canonical_name", user_canonical_name, 0);
   rb_define_method(class_user, "display_name", user_display_name, 0);
+
+  /*
+   * PlaylistContainer
+   */
+  class_playlist_container = rb_define_class_under(module_greenstripes, "PlaylistContainer", rb_cObject);
+  rb_define_method(class_playlist_container, "num_playlists", playlist_container_num_playlists, 0);
+  rb_define_method(class_playlist_container, "playlist", playlist_container_playlist, 1);
+
+  /*
+   * Playlist
+   */
+  class_playlist = rb_define_class_under(module_greenstripes, "Playlist", rb_cObject);
+  rb_define_method(class_playlist, "loaded?", playlist_loaded, 0);
+  rb_define_method(class_playlist, "name", playlist_name, 0);
+  rb_define_method(class_playlist, "name=", playlist_name_set, 1);
+  rb_define_method(class_playlist, "owner", playlist_owner, 0);
+  rb_define_method(class_playlist, "collaborative?", playlist_collaborative, 0);
+  rb_define_method(class_playlist, "collaborative=", playlist_collaborative_set, 1);
+  rb_define_method(class_playlist, "num_tracks", playlist_num_tracks, 0);
+  rb_define_method(class_playlist, "track", playlist_track, 1);
+  rb_define_method(class_playlist, "pending_changes?", playlist_pending_changes, 0);
+
+  /*
+   * Track
+   */
+  class_track = rb_define_class_under(module_greenstripes, "Track", rb_cObject);
 }

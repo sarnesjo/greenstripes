@@ -35,7 +35,8 @@ class TestGreenStripes < Test::Unit::TestCase
     @session.process_events
     assert_not_equal(0, playlist_container.num_playlists)
 
-    playlist_container.playlists.each do |playlist|
+    playlist_container.num_playlists.times do |i|
+      playlist = playlist_container.playlist(i)
       @session.process_events until playlist.loaded?
       assert_not_nil(playlist.name)
       assert_not_nil(playlist.owner)
