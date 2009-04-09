@@ -1,0 +1,9 @@
+# APPLICATION_KEY should be a binary string containing your libspotify application key.
+# Tip: Use Array#pack, like this: APPLICATION_KEY = [0x00, ..., 0x00].pack('C*')
+APPLICATION_KEY = 'TODO'
+
+# USERNAME should be a string containing your Spotify username.
+USERNAME = 'TODO'
+
+# PASSWORD should be a string containing your Spotify password.
+PASSWORD = 'TODO'
