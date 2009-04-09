@@ -9,6 +9,151 @@ static VALUE module_error;
 static VALUE module_connection_state;
 static VALUE module_link_type;
 
+static VALUE class_session;
+
+// callbacks
+
+static void logged_in_callback(sp_session *session, sp_error error)
+{
+  //fprintf(stderr, "logged_in_callback: %s\n", sp_error_message(error));
+}
+
+static void logged_out_callback(sp_session *session)
+{
+  //fprintf(stderr, "logged_out_callback\n");
+}
+
+static void metadata_updated_callback(sp_session *session)
+{
+  //fprintf(stderr, "metadata_updated_callback\n");
+}
+
+static void connection_error_callback(sp_session *session, sp_error error)
+{
+  //fprintf(stderr, "connection_error_callback: %s\n", sp_error_message(error));
+}
+
+static void message_to_user_callback(sp_session *session, const char *message)
+{
+  //fprintf(stderr, "message_to_user_callback: %s\n", message);
+}
+
+static void notify_main_thread_callback(sp_session *session)
+{
+  //fprintf(stderr, "notify_main_thread_callback\n");
+}
+
+static void log_message_callback(sp_session *session, const char *data)
+{
+  //fprintf(stderr, "log_message_callback: %s\n", data);
+}
+
+/*
+ * call-seq: Session.new(application_key, user_agent, cache_location, settings_location) -> session or nil
+ *
+ * Returns a new session.
+ */
+static VALUE session_new(VALUE klass, VALUE application_key, VALUE user_agent, VALUE cache_location, VALUE settings_location)
+{
+  // TODO: session callbacks should not be hardcoded
+  sp_session_callbacks callbacks =
+  {
+    logged_in_callback,
+    logged_out_callback,
+    metadata_updated_callback,
+    connection_error_callback,
+    message_to_user_callback,
+    notify_main_thread_callback,
+    NULL, // music_delivery
+    NULL, // play_token_lost
+    log_message_callback
+  };
+
+  sp_session_config config =
+  {
+    SPOTIFY_API_VERSION,
+    StringValuePtr(cache_location),
+    StringValuePtr(settings_location),
+    RSTRING_PTR(application_key),
+    RSTRING_LEN(application_key),
+    StringValuePtr(user_agent),
+    &callbacks,
+    NULL
+  };
+
+  sp_session *session = NULL;
+  sp_error error = sp_session_init(&config, &session);
+
+  // TODO: handle error in a better way?
+  if(error != SP_ERROR_OK)
+  {
+    fprintf(stderr, "error: %s\n", sp_error_message(error));
+    return Qnil;
+  }
+
+  VALUE session_value = Data_Wrap_Struct(class_session, NULL, NULL, session);
+  VALUE argv[4] = {application_key, user_agent, cache_location, settings_location};
+  rb_obj_call_init(session_value, 4, argv);
+  return session_value;
+}
+
+/*
+ * call-seq: session.login(username, password) -> error
+ *
+ * Attempts to log in with the given username and password. Returns one of the
+ * constants defined in Error.
+ */
+static VALUE session_login(VALUE self, VALUE username, VALUE password)
+{
+  sp_session *session;
+  Data_Get_Struct(self, sp_session, session);
+  sp_error error = sp_session_login(session, StringValuePtr(username), StringValuePtr(password));
+  // TODO: throw an exception instead?
+  return INT2FIX(error);
+}
+
+/*
+ * call-seq: session.logout -> error
+ *
+ * Attempts to log out. Returns one of the constants defined in Error.
+ */
+static VALUE session_logout(VALUE self)
+{
+  sp_session *session;
+  Data_Get_Struct(self, sp_session, session);
+  sp_error error = sp_session_logout(session);
+  // TODO: throw an exception instead?
+  return INT2FIX(error);
+}
+
+/*
+ * call-seq: session.connection_state -> state
+ *
+ * Returns one of the constants defined in ConnectionState.
+ */
+static VALUE session_connection_state(VALUE self)
+{
+  sp_session *session;
+  Data_Get_Struct(self, sp_session, session);
+  int state = sp_session_connectionstate(session);
+  return INT2FIX(state);
+}
+
+/*
+ * call-seq: session.process_events -> fixnum
+ *
+ * Makes the session process any pending events. Returns the number of
+ * milliseconds until you should call this method again.
+ */
+static VALUE session_process_events(VALUE self)
+{
+  sp_session *session;
+  Data_Get_Struct(self, sp_session, session);
+  int next_timeout;
+  sp_session_process_events(session, &next_timeout);
+  return INT2FIX(next_timeout);
+}
+
 // init
 
 void Init_greenstripes()
@@ -59,4 +204,14 @@ void Init_greenstripes()
   rb_define_const(module_link_type, "ARTIST", INT2FIX(SP_LINKTYPE_ARTIST));
   rb_define_const(module_link_type, "SEARCH", INT2FIX(SP_LINKTYPE_SEARCH));
   rb_define_const(module_link_type, "PLAYLIST", INT2FIX(SP_LINKTYPE_PLAYLIST));
+
+  /*
+   * Session
+   */
+  class_session = rb_define_class_under(module_greenstripes, "Session", rb_cObject);
+  rb_define_singleton_method(class_session, "new", session_new, 4);
+  rb_define_method(class_session, "login", session_login, 2);
+  rb_define_method(class_session, "logout", session_logout, 0);
+  rb_define_method(class_session, "connection_state", session_connection_state, 0);
+  rb_define_method(class_session, "process_events", session_process_events, 0);
 }

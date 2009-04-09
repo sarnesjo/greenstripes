@@ -6,4 +6,8 @@ require 'greenstripes'
 
 # GreenStripes
 module GreenStripes
+  class Session
+    def initialize(*args) # :nodoc:
+    end
+  end
 end
