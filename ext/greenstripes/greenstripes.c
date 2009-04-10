@@ -394,6 +394,33 @@ static VALUE playlist_pending_changes(VALUE self)
   return sp_playlist_has_pending_changes(playlist) ? Qtrue : Qfalse;
 }
 
+/*
+ * call-seq: playlist.add_tracks(tracks, position) -> error
+ *
+ * Add tracks at position in the playlist.
+ */
+static VALUE playlist_add_tracks(VALUE self, VALUE tracks, VALUE position)
+{
+}
+
+/*
+ * call-seq: playlist.remove_tracks(indices) -> error
+ *
+ * Remove the tracks at indices from the playlist.
+ */
+static VALUE playlist_remove_tracks(VALUE self, VALUE indices)
+{
+}
+
+/*
+ * call-seq: playlist.reorder_tracks(indices, new_position) -> error
+ *
+ * Move the tracks at indices to new_position in the playlist.
+ */
+static VALUE playlist_reorder_tracks(VALUE self, VALUE indices, VALUE new_position)
+{
+}
+
 static void search_free(void *search)
 {
   sp_search_release(search);
@@ -1242,6 +1269,9 @@ void Init_greenstripes()
   rb_define_method(class_playlist, "num_tracks", playlist_num_tracks, 0);
   rb_define_method(class_playlist, "track", playlist_track, 1);
   rb_define_method(class_playlist, "pending_changes?", playlist_pending_changes, 0);
+  rb_define_method(class_playlist, "add_tracks", playlist_add_tracks, 2);
+  rb_define_method(class_playlist, "remove_tracks", playlist_remove_tracks, 1);
+  rb_define_method(class_playlist, "reorder_tracks", playlist_reorder_tracks, 2);
 
   /*
    * Search
