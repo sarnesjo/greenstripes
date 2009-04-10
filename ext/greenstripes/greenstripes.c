@@ -273,6 +273,18 @@ static VALUE playlist_container_playlist(VALUE self, VALUE index)
 }
 
 /*
+ * call-seq: playlist_container.add_new_playlist(name) -> error
+ *
+ */
+static VALUE playlist_container_add_new_playlist(VALUE self, VALUE name)
+{
+  sp_playlistcontainer *pc;
+  Data_Get_Struct(self, sp_playlistcontainer, pc);
+  sp_playlist *p = sp_playlistcontainer_add_new_playlist(pc, StringValuePtr(name));
+  return p ? Data_Wrap_Struct(class_playlist, NULL, NULL, p) : Qnil;
+}
+
+/*
  * call-seq: playlist_container.add_playlist(link) -> error
  *
  */
@@ -1327,6 +1339,7 @@ void Init_greenstripes()
   class_playlist_container = rb_define_class_under(module_greenstripes, "PlaylistContainer", rb_cObject);
   rb_define_method(class_playlist_container, "num_playlists", playlist_container_num_playlists, 0);
   rb_define_method(class_playlist_container, "playlist", playlist_container_playlist, 1);
+  rb_define_method(class_playlist_container, "add_new_playlist", playlist_container_add_new_playlist, 1);
   rb_define_method(class_playlist_container, "add_playlist", playlist_container_add_playlist, 1);
   rb_define_method(class_playlist_container, "remove_playlist", playlist_container_remove_playlist, 1);
   rb_define_method(class_playlist_container, "move_playlist", playlist_container_move_playlist, 2);
