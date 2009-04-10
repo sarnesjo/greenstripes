@@ -24,12 +24,20 @@ module GreenStripes
 
   class Playlist
     has_link
+
+    def ==(other)
+      self.to_link == other.to_link
+    end
   end
 
   class Search
     has_link
 
     def initialize(*args) # :nodoc:
+    end
+
+    def ==(other)
+      self.to_link == other.to_link
     end
   end
 
@@ -45,18 +53,34 @@ module GreenStripes
 
   class Artist
     has_link
+
+    def ==(other)
+      self.to_link == other.to_link
+    end
   end
 
   class Album
     has_link
+
+    def ==(other)
+      self.to_link == other.to_link
+    end
   end
 
   class Track
     has_link
+
+    def ==(other)
+      self.to_link == other.to_link
+    end
   end
 
   class Link
     def initialize(*args) # :nodoc:
+    end
+
+    def ==(other)
+      self.to_s == other.to_s
     end
   end
 end

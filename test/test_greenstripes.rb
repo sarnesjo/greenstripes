@@ -63,7 +63,7 @@ class TestGreenStripes < Test::Unit::TestCase
     artist_browse = GreenStripes::ArtistBrowse.new(@session, track.artist(0))
     @session.process_events until artist_browse.loaded?
     assert_equal(GreenStripes::Error::OK, artist_browse.error)
-    assert_same(track.artist(0), artist_browse.artist)
+    assert_equal(track.artist(0), artist_browse.artist)
     assert_not_equal(0, artist_browse.num_tracks)
     assert_not_nil(artist_browse.track(0))
     assert_not_equal(0, artist_browse.num_similar_artists)
@@ -77,8 +77,8 @@ class TestGreenStripes < Test::Unit::TestCase
     album_browse = GreenStripes::AlbumBrowse.new(@session, track.album)
     @session.process_events until album_browse.loaded?
     assert_equal(GreenStripes::Error::OK, album_browse.error)
-    assert_same(track.album, album_browse.album)
-    assert_same(track.album.artist, album_browse.artist)
+    assert_equal(track.album, album_browse.album)
+    assert_equal(track.album.artist, album_browse.artist)
     assert_not_equal(0, album_browse.num_tracks)
     assert_not_nil(album_browse.track(0))
     assert_not_equal(0, album_browse.num_copyrights)
