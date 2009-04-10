@@ -282,8 +282,8 @@ static VALUE playlist_container_add_playlist(VALUE self, VALUE link)
   Data_Get_Struct(self, sp_playlistcontainer, pc);
   sp_link *l;
   Data_Get_Struct(link, sp_link, l);
-  sp_error e = sp_playlistcontainer_add_playlist(pc, l);
-  return INT2FIX(e);
+  sp_playlist *p = sp_playlistcontainer_add_playlist(pc, l);
+  return p ? Data_Wrap_Struct(class_playlist, NULL, NULL, p) : Qnil;
 }
 
 /*
@@ -442,8 +442,9 @@ static VALUE playlist_add_tracks(VALUE self, VALUE tracks, VALUE position)
   sp_playlist *p;
   Data_Get_Struct(self, sp_playlist, p);
   int n = rb_ary_length(tracks);
-  sp_track **ts = malloc(n*sizeof(sp_track *));
-  for(int i = 0; i < n; ++i)
+  const sp_track **ts = malloc(n*sizeof(sp_track *));
+  int i;
+  for(i = 0; i < n; ++i)
   {
     sp_track *t;
     Data_Get_Struct(rb_ary_entry(tracks, i), sp_track, t);
@@ -465,7 +466,8 @@ static VALUE playlist_remove_tracks(VALUE self, VALUE indices)
   Data_Get_Struct(self, sp_playlist, p);
   int n = rb_ary_length(indices);
   int *is = malloc(n*sizeof(int));
-  for(int i = 0; i < n; ++i)
+  int i;
+  for(i = 0; i < n; ++i)
     is[i] = FIX2INT(rb_ary_entry(indices, i));
   sp_error e = sp_playlist_remove_tracks(p, is, n);
   free(is);
@@ -483,7 +485,8 @@ static VALUE playlist_reorder_tracks(VALUE self, VALUE indices, VALUE new_positi
   Data_Get_Struct(self, sp_playlist, p);
   int n = rb_ary_length(indices);
   int *is = malloc(n*sizeof(int));
-  for(int i = 0; i < n; ++i)
+  int i;
+  for(i = 0; i < n; ++i)
     is[i] = FIX2INT(rb_ary_entry(indices, i));
   sp_error e = sp_playlist_reorder_tracks(p, is, n, FIX2INT(new_position));
   free(is);

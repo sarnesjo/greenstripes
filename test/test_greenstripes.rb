@@ -60,10 +60,10 @@ class TestGreenStripes < Test::Unit::TestCase
   def test_artist_browse
     track = @playlist.track(0)
     @session.process_events until track.loaded?
-    artist_browse = GreenStripes::ArtistBrowse.new(@session, track.artist)
+    artist_browse = GreenStripes::ArtistBrowse.new(@session, track.artist(0))
     @session.process_events until artist_browse.loaded?
     assert_equal(GreenStripes::Error::OK, artist_browse.error)
-    assert_same(track.artist, artist_browse.artist)
+    assert_same(track.artist(0), artist_browse.artist)
     assert_not_equal(0, artist_browse.num_tracks)
     assert_not_nil(artist_browse.track(0))
     assert_not_equal(0, artist_browse.num_similar_artists)
