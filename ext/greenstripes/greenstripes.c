@@ -401,6 +401,19 @@ static VALUE playlist_pending_changes(VALUE self)
  */
 static VALUE playlist_add_tracks(VALUE self, VALUE tracks, VALUE position)
 {
+  sp_playlist *p;
+  Data_Get_Struct(self, sp_playlist, p);
+  int n = rb_ary_length(tracks);
+  sp_track **ts = malloc(n*sizeof(sp_track *));
+  for(int i = 0; i < n; ++i)
+  {
+    sp_track *t;
+    Data_Get_Struct(rb_ary_entry(tracks, i), sp_track, t);
+    ts[i] = t;
+  }
+  sp_error e = sp_playlist_add_tracks(p, ts, n, FIX2INT(position));
+  free(ts);
+  return INT2FIX(e);
 }
 
 /*
@@ -410,6 +423,15 @@ static VALUE playlist_add_tracks(VALUE self, VALUE tracks, VALUE position)
  */
 static VALUE playlist_remove_tracks(VALUE self, VALUE indices)
 {
+  sp_playlist *p;
+  Data_Get_Struct(self, sp_playlist, p);
+  int n = rb_ary_length(indices);
+  int *is = malloc(n*sizeof(int));
+  for(int i = 0; i < n; ++i)
+    is[i] = FIX2INT(rb_ary_entry(indices, i));
+  sp_error e = sp_playlist_remove_tracks(p, is, n);
+  free(is);
+  return INT2FIX(e);
 }
 
 /*
@@ -419,6 +441,15 @@ static VALUE playlist_remove_tracks(VALUE self, VALUE indices)
  */
 static VALUE playlist_reorder_tracks(VALUE self, VALUE indices, VALUE new_position)
 {
+  sp_playlist *p;
+  Data_Get_Struct(self, sp_playlist, p);
+  int n = rb_ary_length(indices);
+  int *is = malloc(n*sizeof(int));
+  for(int i = 0; i < n; ++i)
+    is[i] = FIX2INT(rb_ary_entry(indices, i));
+  sp_error e = sp_playlist_reorder_tracks(p, is, n, FIX2INT(new_position));
+  free(is);
+  return INT2FIX(e);
 }
 
 static void search_free(void *search)
