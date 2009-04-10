@@ -273,6 +273,44 @@ static VALUE playlist_container_playlist(VALUE self, VALUE index)
 }
 
 /*
+ * call-seq: playlist_container.add_playlist(link) -> error
+ *
+ */
+static VALUE playlist_container_add_playlist(VALUE self, VALUE link)
+{
+  sp_playlistcontainer *pc;
+  Data_Get_Struct(self, sp_playlistcontainer, pc);
+  sp_link *l;
+  Data_Get_Struct(link, sp_link, l);
+  sp_error e = sp_playlistcontainer_add_playlist(pc, l);
+  return INT2FIX(e);
+}
+
+/*
+ * call-seq: playlist_container.remove_playlist(index) -> error
+ *
+ */
+static VALUE playlist_container_remove_playlist(VALUE self, VALUE index)
+{
+  sp_playlistcontainer *pc;
+  Data_Get_Struct(self, sp_playlistcontainer, pc);
+  sp_error e = sp_playlistcontainer_remove_playlist(pc, FIX2INT(index));
+  return INT2FIX(e);
+}
+
+/*
+ * call-seq: playlist_container.move_playlist(index, new_position) -> error
+ *
+ */
+static VALUE playlist_container_move_playlist(VALUE self, VALUE indices, VALUE new_position)
+{
+  sp_playlistcontainer *pc;
+  Data_Get_Struct(self, sp_playlistcontainer, pc);
+  sp_error e = sp_playlistcontainer_move_playlist(pc, FIX2INT(index), FIX2INT(new_position));
+  return INT2FIX(e);
+}
+
+/*
  * call-seq: playlist.loaded? -> true or false
  *
  * Returns true if the playlist is loaded, false otherwise.
@@ -1286,6 +1324,9 @@ void Init_greenstripes()
   class_playlist_container = rb_define_class_under(module_greenstripes, "PlaylistContainer", rb_cObject);
   rb_define_method(class_playlist_container, "num_playlists", playlist_container_num_playlists, 0);
   rb_define_method(class_playlist_container, "playlist", playlist_container_playlist, 1);
+  rb_define_method(class_playlist_container, "add_playlist", playlist_container_add_playlist, 1);
+  rb_define_method(class_playlist_container, "remove_playlist", playlist_container_remove_playlist, 1);
+  rb_define_method(class_playlist_container, "move_playlist", playlist_container_move_playlist, 2);
 
   /*
    * Playlist
