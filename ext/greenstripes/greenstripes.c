@@ -14,6 +14,8 @@ static VALUE class_user;
 static VALUE class_playlist_container;
 static VALUE class_playlist;
 static VALUE class_search;
+static VALUE class_artist_browse;
+static VALUE class_album_browse;
 static VALUE class_artist;
 static VALUE class_album;
 static VALUE class_track;
@@ -59,6 +61,16 @@ static void log_message_callback(sp_session *session, const char *data)
 static void search_complete_callback(sp_search *result, void *userdata)
 {
   //fprintf(stderr, "search_complete_callback\n");
+}
+
+static void artist_browse_complete_callback(sp_artistbrowse *result, void *userdata)
+{
+  //fprintf(stderr, "artist_browse_complete_callback\n");
+}
+
+static void album_browse_complete_callback(sp_albumbrowse *result, void *userdata)
+{
+  //fprintf(stderr, "album_browse_complete_callback\n");
 }
 
 /*
@@ -559,6 +571,290 @@ static VALUE search_did_you_mean(VALUE self)
   return d ? rb_str_new2(d) : Qnil;
 }
 
+static void artist_browse_free(void *ab)
+{
+  sp_artistbrowse_release(ab);
+}
+
+/*
+ * call-seq: ArtistBrowse.new(session, artist) -> artist_browse or nil
+ *
+ * Returns a new artist browse object.
+ */
+static VALUE artist_browse_new(VALUE klass, VALUE session, VALUE artist)
+{
+  // TODO: artist browse callback should not be hardcoded
+
+  sp_session *s;
+  Data_Get_Struct(session, sp_session, s);
+
+  sp_artist *a;
+  Data_Get_Struct(artist, sp_artist, a);
+
+  sp_artistbrowse *artistbrowse = NULL;
+  artistbrowse = sp_artistbrowse_create(s, a, artist_browse_complete_callback, NULL);
+
+  if(!artistbrowse)
+    return Qnil;
+
+  VALUE ab_value = Data_Wrap_Struct(class_artist_browse, NULL, artist_browse_free, artistbrowse);
+  VALUE argv[2] = {session, artist};
+  rb_obj_call_init(ab_value, 2, argv);
+  return ab_value;
+}
+
+/*
+ * call-seq: artist_browse.loaded? -> true or false
+ *
+ * Returns true if the artist browse object is loaded, false otherwise.
+ */
+static VALUE artist_browse_loaded(VALUE self)
+{
+  sp_artistbrowse *artistbrowse;
+  Data_Get_Struct(self, sp_artistbrowse, artistbrowse);
+  return sp_artistbrowse_is_loaded(artistbrowse) ? Qtrue : Qfalse;
+}
+
+/*
+ * call-seq: artist_browse.error -> error
+ *
+ * Returns one of the constants defined in Error.
+ */
+static VALUE artist_browse_error(VALUE self)
+{
+  sp_artistbrowse *artistbrowse;
+  Data_Get_Struct(self, sp_artistbrowse, artistbrowse);
+  sp_error error = sp_artistbrowse_error(artistbrowse);
+  return INT2FIX(error);
+}
+
+/*
+ * call-seq: artist_browse.artist -> artist or nil
+ *
+ * Returns the artist for the artist browse object.
+ */
+static VALUE artist_browse_artist(VALUE self)
+{
+  sp_artistbrowse *artistbrowse;
+  Data_Get_Struct(self, sp_artistbrowse, artistbrowse);
+  sp_artist *artist = sp_artistbrowse_artist(artistbrowse);
+  return artist ? Data_Wrap_Struct(class_artist, NULL, NULL, artist) : Qnil;
+}
+
+/*
+ * call-seq: artist_browse.num_tracks -> fixnum or nil
+ *
+ */
+static VALUE artist_browse_num_tracks(VALUE self)
+{
+  sp_artistbrowse *artistbrowse;
+  Data_Get_Struct(self, sp_artistbrowse, artistbrowse);
+  int n = sp_artistbrowse_num_tracks(artistbrowse);
+  return (n >= 0) ? INT2FIX(n) : Qnil;
+}
+
+/*
+ * call-seq: artist_browse.track(index) -> track or nil
+ *
+ */
+static VALUE artist_browse_track(VALUE self, VALUE index)
+{
+  sp_artistbrowse *artistbrowse;
+  Data_Get_Struct(self, sp_artistbrowse, artistbrowse);
+  int i = FIX2INT(index);
+  sp_track *track = NULL;
+  track = sp_artistbrowse_track(artistbrowse, i);
+  return track ? Data_Wrap_Struct(class_track, NULL, NULL, track) : Qnil;
+}
+
+/*
+ * call-seq: artist_browse.num_similar_artists -> fixnum or nil
+ *
+ */
+static VALUE artist_browse_num_similar_artists(VALUE self)
+{
+  sp_artistbrowse *artistbrowse;
+  Data_Get_Struct(self, sp_artistbrowse, artistbrowse);
+  int n = sp_artistbrowse_num_similar_artists(artistbrowse);
+  return (n >= 0) ? INT2FIX(n) : Qnil;
+}
+
+/*
+ * call-seq: artist_browse.similar_artist(index) -> artist or nil
+ *
+ */
+static VALUE artist_browse_similar_artist(VALUE self, VALUE index)
+{
+  sp_artistbrowse *artistbrowse;
+  Data_Get_Struct(self, sp_artistbrowse, artistbrowse);
+  int i = FIX2INT(index);
+  sp_artist *artist = NULL;
+  artist = sp_artistbrowse_similar_artist(artistbrowse, i);
+  return artist ? Data_Wrap_Struct(class_artist, NULL, NULL, artist) : Qnil;
+}
+
+/*
+ * call-seq: artist_browse.biography -> string or nil
+ *
+ * Returns the biography for the artist browse object, or nil if no biography is
+ * available.
+ */
+static VALUE artist_browse_biography(VALUE self)
+{
+  sp_artistbrowse *artistbrowse;
+  Data_Get_Struct(self, sp_artistbrowse, artistbrowse);
+  const char *bio = sp_artistbrowse_biography(artistbrowse);
+  return bio ? rb_str_new2(bio) : Qnil;
+}
+
+static void album_browse_free(void *ab)
+{
+  sp_albumbrowse_release(ab);
+}
+
+/*
+ * call-seq: AlbumBrowse.new(session, album) -> album_browse or nil
+ *
+ * Returns a new album browse object.
+ */
+static VALUE album_browse_new(VALUE klass, VALUE session, VALUE album)
+{
+  // TODO: album browse callback should not be hardcoded
+
+  sp_session *s;
+  Data_Get_Struct(session, sp_session, s);
+
+  sp_album *a;
+  Data_Get_Struct(album, sp_album, a);
+
+  sp_albumbrowse *albumbrowse = NULL;
+  albumbrowse = sp_albumbrowse_create(s, a, album_browse_complete_callback, NULL);
+
+  if(!albumbrowse)
+    return Qnil;
+
+  VALUE ab_value = Data_Wrap_Struct(class_album_browse, NULL, album_browse_free, albumbrowse);
+  VALUE argv[2] = {session, album};
+  rb_obj_call_init(ab_value, 2, argv);
+  return ab_value;
+}
+
+/*
+ * call-seq: album_browse.loaded? -> true or false
+ *
+ * Returns true if the album browse object is loaded, false otherwise.
+ */
+static VALUE album_browse_loaded(VALUE self)
+{
+  sp_albumbrowse *albumbrowse;
+  Data_Get_Struct(self, sp_albumbrowse, albumbrowse);
+  return sp_albumbrowse_is_loaded(albumbrowse) ? Qtrue : Qfalse;
+}
+
+/*
+ * call-seq: album_browse.error -> error
+ *
+ * Returns one of the constants defined in Error.
+ */
+static VALUE album_browse_error(VALUE self)
+{
+  sp_albumbrowse *albumbrowse;
+  Data_Get_Struct(self, sp_albumbrowse, albumbrowse);
+  sp_error error = sp_albumbrowse_error(albumbrowse);
+  return INT2FIX(error);
+}
+
+/*
+ * call-seq: album_browse.artist -> artist or nil
+ *
+ * Returns the artist for the album browse object.
+ */
+static VALUE album_browse_artist(VALUE self)
+{
+  sp_albumbrowse *albumbrowse;
+  Data_Get_Struct(self, sp_albumbrowse, albumbrowse);
+  sp_artist *artist = sp_albumbrowse_artist(albumbrowse);
+  return artist ? Data_Wrap_Struct(class_artist, NULL, NULL, artist) : Qnil;
+}
+
+/*
+ * call-seq: album_browse.album -> album or nil
+ *
+ * Returns the album for the album browse object.
+ */
+static VALUE album_browse_album(VALUE self)
+{
+  sp_albumbrowse *albumbrowse;
+  Data_Get_Struct(self, sp_albumbrowse, albumbrowse);
+  sp_album *album = sp_albumbrowse_album(albumbrowse);
+  return album ? Data_Wrap_Struct(class_album, NULL, NULL, album) : Qnil;
+}
+
+/*
+ * call-seq: album_browse.num_tracks -> fixnum or nil
+ *
+ */
+static VALUE album_browse_num_tracks(VALUE self)
+{
+  sp_albumbrowse *albumbrowse;
+  Data_Get_Struct(self, sp_albumbrowse, albumbrowse);
+  int n = sp_albumbrowse_num_tracks(albumbrowse);
+  return (n >= 0) ? INT2FIX(n) : Qnil;
+}
+
+/*
+ * call-seq: album_browse_track(index) -> track or nil
+ *
+ */
+static VALUE album_browse_track(VALUE self, VALUE index)
+{
+  sp_albumbrowse *albumbrowse;
+  Data_Get_Struct(self, sp_albumbrowse, albumbrowse);
+  int i = FIX2INT(index);
+  sp_track *track = NULL;
+  track = sp_albumbrowse_track(albumbrowse, i);
+  return track ? Data_Wrap_Struct(class_track, NULL, NULL, track) : Qnil;
+}
+
+/*
+ * call-seq: album_browse.num_copyrights -> fixnum or nil
+ *
+ */
+static VALUE album_browse_num_copyrights(VALUE self)
+{
+  sp_albumbrowse *albumbrowse;
+  Data_Get_Struct(self, sp_albumbrowse, albumbrowse);
+  int n = sp_albumbrowse_num_copyrights(albumbrowse);
+  return (n >= 0) ? INT2FIX(n) : Qnil;
+}
+
+/*
+ * call-seq: album_browse.copyright(index) -> string or nil
+ *
+ */
+static VALUE album_browse_copyright(VALUE self, VALUE index)
+{
+  sp_albumbrowse *albumbrowse;
+  Data_Get_Struct(self, sp_albumbrowse, albumbrowse);
+  int i = FIX2INT(index);
+  const char *c = sp_albumbrowse_copyright(albumbrowse, i);
+  return c ? rb_str_new2(c) : Qnil;
+}
+
+/*
+ * call-seq: album_browse.review -> string or nil
+ *
+ * Returns the review for the album browse object, or nil if no review is
+ * available.
+ */
+static VALUE album_browse_review(VALUE self)
+{
+  sp_albumbrowse *albumbrowse;
+  Data_Get_Struct(self, sp_albumbrowse, albumbrowse);
+  const char *r = sp_albumbrowse_review(albumbrowse);
+  return r ? rb_str_new2(r) : Qnil;
+}
+
 /*
  * call-seq: artist.loaded? -> true or false
  *
@@ -963,6 +1259,35 @@ void Init_greenstripes()
   rb_define_method(class_search, "total_tracks", search_total_tracks, 0);
   rb_define_method(class_search, "query", search_query, 0);
   rb_define_method(class_search, "did_you_mean", search_did_you_mean, 0);
+
+  /*
+   * ArtistBrowse
+   */
+  class_artist_browse = rb_define_class_under(module_greenstripes, "ArtistBrowse", rb_cObject);
+  rb_define_singleton_method(class_artist_browse, "new", artist_browse_new, 2);
+  rb_define_method(class_artist_browse, "loaded?", artist_browse_loaded, 0);
+  rb_define_method(class_artist_browse, "error", artist_browse_error, 0);
+  rb_define_method(class_artist_browse, "artist", artist_browse_artist, 0);
+  rb_define_method(class_artist_browse, "num_tracks", artist_browse_num_tracks, 0);
+  rb_define_method(class_artist_browse, "track", artist_browse_track, 1);
+  rb_define_method(class_artist_browse, "num_similar_artists", artist_browse_num_similar_artists, 0);
+  rb_define_method(class_artist_browse, "similar_artist", artist_browse_similar_artist, 1);
+  rb_define_method(class_artist_browse, "biography", artist_browse_biography, 0);
+
+  /*
+   * AlbumBrowse
+   */
+  class_album_browse = rb_define_class_under(module_greenstripes, "AlbumBrowse", rb_cObject);
+  rb_define_singleton_method(class_album_browse, "new", album_browse_new, 2);
+  rb_define_method(class_album_browse, "loaded?", album_browse_loaded, 0);
+  rb_define_method(class_album_browse, "error", album_browse_error, 0);
+  rb_define_method(class_album_browse, "artist", album_browse_artist, 0);
+  rb_define_method(class_album_browse, "album", album_browse_album, 0);
+  rb_define_method(class_album_browse, "num_tracks", album_browse_num_tracks, 0);
+  rb_define_method(class_album_browse, "track", album_browse_track, 1);
+  rb_define_method(class_album_browse, "num_copyrights", album_browse_num_copyrights, 0);
+  rb_define_method(class_album_browse, "copyright", album_browse_copyright, 1);
+  rb_define_method(class_album_browse, "review", album_browse_review, 0);
 
   /*
    * Artist

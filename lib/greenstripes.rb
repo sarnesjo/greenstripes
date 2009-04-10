@@ -33,6 +33,16 @@ module GreenStripes
     end
   end
 
+  class ArtistBrowse
+    def initialize(*args) # :nodoc:
+    end
+  end
+
+  class AlbumBrowse
+    def initialize(*args) # :nodoc:
+    end
+  end
+
   class Artist
     has_link
   end
