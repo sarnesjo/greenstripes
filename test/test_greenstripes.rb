@@ -10,9 +10,16 @@ require 'config'
 
 class TestGreenStripes < Test::Unit::TestCase
   def setup
+    # TODO: it would actually be better if this was run just once, before all tests
     @session = GreenStripes::Session.new(APPLICATION_KEY, 'GreenStripes', 'tmp', 'tmp')
     @session.login(USERNAME, PASSWORD)
     @session.process_events until @session.connection_state == GreenStripes::ConnectionState::LOGGED_IN
+
+    # TODO: it would be better if we created a designated test playlist here
+    playlist_container = @session.playlist_container
+    @session.process_events until playlist_container.num_playlists > 0
+    @playlist = playlist_container.playlist(0)
+    @session.process_events until @playlist.loaded?
   end
 
   def teardown
@@ -27,38 +34,63 @@ class TestGreenStripes < Test::Unit::TestCase
     assert_not_nil(user.canonical_name)
   end
 
-  def test_playlists
-    playlist_container = @session.playlist_container
-
-    # PlaylistContainer#num_playlists will return 0 just after login
-    # this is a stupid workaround, since a user could have 0 playlists...
-    @session.process_events
-    assert_not_equal(0, playlist_container.num_playlists)
-
-    playlist_container.num_playlists.times do |i|
-      playlist = playlist_container.playlist(i)
-      @session.process_events until playlist.loaded?
-      assert_not_nil(playlist.name)
-      assert_not_nil(playlist.owner)
-      assert_not_nil(playlist.collaborative?)
-      assert_not_nil(playlist.track(0)) if playlist.num_tracks > 0
-    end
+  def test_playlist
+    assert_not_nil(@playlist.name)
+    assert_not_nil(@playlist.owner)
+    assert_not_nil(@playlist.collaborative?)
+    assert_not_equal(0, @playlist.num_tracks)
+    assert_not_nil(@playlist.track(0))
   end
 
   def test_search
-    search = GreenStripes::Search.new(@session, 'a', 0, 1)
+    query = 'a'
+    search = GreenStripes::Search.new(@session, query, 0, 1)
     @session.process_events until search.loaded?
+    assert_equal(GreenStripes::Error::OK, search.error)
+    assert_equal(query, search.query)
+    assert_not_nil(search.did_you_mean)
     assert_not_equal(0, search.num_artists)
+    assert_not_nil(search.artist(0))
     assert_not_equal(0, search.num_albums)
+    assert_not_nil(search.album(0))
     assert_not_equal(0, search.num_tracks)
+    assert_not_nil(search.track(0))
+  end
+
+  def test_artist_browse
+    track = @playlist.track(0)
+    @session.process_events until track.loaded?
+    artist_browse = GreenStripes::ArtistBrowse.new(@session, track.artist)
+    @session.process_events until artist_browse.loaded?
+    assert_equal(GreenStripes::Error::OK, artist_browse.error)
+    assert_same(track.artist, artist_browse.artist)
+    assert_not_equal(0, artist_browse.num_tracks)
+    assert_not_nil(artist_browse.track(0))
+    assert_not_equal(0, artist_browse.num_similar_artists)
+    assert_not_nil(artist_browse.similar_artist(0))
+    assert_not_nil(artist_browse.biography)
+  end
+
+  def test_album_browse
+    track = @playlist.track(0)
+    @session.process_events until track.loaded?
+    album_browse = GreenStripes::AlbumBrowse.new(@session, track.album)
+    @session.process_events until album_browse.loaded?
+    assert_equal(GreenStripes::Error::OK, album_browse.error)
+    assert_same(track.album, album_browse.album)
+    assert_same(track.album.artist, album_browse.artist)
+    assert_not_equal(0, album_browse.num_tracks)
+    assert_not_nil(album_browse.track(0))
+    assert_not_equal(0, album_browse.num_copyrights)
+    assert_not_nil(album_browse.copyright(0))
+    assert_not_nil(album_browse.review)
   end
 
   def test_link_from_objects
-    playlist = @session.playlist_container.playlist(0)
-    track = playlist.track(0)
+    track = @playlist.track(0)
     search = GreenStripes::Search.new(@session, 'a', 0, 1)
     @session.process_events until track.loaded? and search.loaded?
-    [track.artist(0), track.album, track, playlist, search].each do |obj|
+    [@playlist, search, track.artist(0), track.album, track].each do |obj|
       assert_kind_of(GreenStripes::Link, GreenStripes::Link.new(obj))
       assert_kind_of(GreenStripes::Link, obj.to_link)
     end
