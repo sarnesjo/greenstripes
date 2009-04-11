@@ -1262,6 +1262,42 @@ static VALUE link_to_s(VALUE self)
   return (n < 100) ? rb_str_new2(buffer) : Qnil;
 }
 
+/*
+ * call-seq: link.to_artist -> artist or nil
+ *
+ */
+static VALUE link_to_artist(VALUE self)
+{
+  sp_link *l;
+  Data_Get_Struct(self, sp_link, l);
+  sp_artist *a = sp_link_as_artist(l);
+  return a ? Data_Wrap_Struct(class_artist, NULL, NULL, a) : Qnil;
+}
+
+/*
+ * call-seq: link.to_album -> album or nil
+ *
+ */
+static VALUE link_to_album(VALUE self)
+{
+  sp_link *l;
+  Data_Get_Struct(self, sp_link, l);
+  sp_album *a = sp_link_as_album(l);
+  return a ? Data_Wrap_Struct(class_album, NULL, NULL, a) : Qnil;
+}
+
+/*
+ * call-seq: link.to_track -> track or nil
+ *
+ */
+static VALUE link_to_track(VALUE self)
+{
+  sp_link *l;
+  Data_Get_Struct(self, sp_link, l);
+  sp_track *t = sp_link_as_track(l);
+  return t ? Data_Wrap_Struct(class_track, NULL, NULL, t) : Qnil;
+}
+
 // init
 
 void Init_greenstripes()
@@ -1445,4 +1481,7 @@ void Init_greenstripes()
   rb_define_singleton_method(class_link, "new", link_new, 1);
   rb_define_method(class_link, "link_type", link_link_type, 0);
   rb_define_method(class_link, "to_s", link_to_s, 0);
+  rb_define_method(class_link, "to_artist", link_to_artist, 0);
+  rb_define_method(class_link, "to_album", link_to_album, 0);
+  rb_define_method(class_link, "to_track", link_to_track, 0);
 }
