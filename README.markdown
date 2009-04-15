@@ -21,6 +21,22 @@ programs like this one:
     session.logout
     session.process_events until session.connection_state == GreenStripes::ConnectionState::LOGGED_OUT
 
+## Installing GreenStripes
+
+First off, make sure that you have libspotify installed and set up correctly,
+and that you have a valid application key. An easy way of doing this is
+compiling and running one of the example programs that come with libspotify.
+
+The easiest way of installing GreenStripes is via RubyGems:
+
+    $ sudo gem install sarnesjo-greenstripes --source http://gems.github.com
+
+(If you've already added GitHub as a gem source, you can skip the `--source`
+flag.)
+
+If the installation fails with about a million errors, make sure you've
+installed libspotify somewhere gcc will look, like `/usr/local`.
+
 ## Copyright
 
 Copyright (c) 2009 Jesper Särnesjö. See LICENSE for details.
