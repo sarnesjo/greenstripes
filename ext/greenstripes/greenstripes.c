@@ -1302,6 +1302,9 @@ static VALUE link_to_track(VALUE self)
 
 void Init_greenstripes()
 {
+  /*
+   * GreenStripes
+   */
   module_greenstripes = rb_define_module("GreenStripes");
 
   /*
