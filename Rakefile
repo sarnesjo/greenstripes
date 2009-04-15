@@ -13,6 +13,7 @@ begin
     gem.files = %w{ext/greenstripes/extconf.rb ext/greenstripes/greenstripes.c lib/greenstripes.rb}
     gem.test_files = %w{test/config.rb.sample test/test_greenstripes.rb}
     gem.extensions = %w{ext/greenstripes/extconf.rb}
+    gem.extra_rdoc_files = %w{ext/greenstripes/greenstripes.c}
 
     # gem is a Gem::Specification... see http://www.rubygems.org/read/chapter/20 for additional settings
   end
@@ -28,18 +29,3 @@ Rake::TestTask.new(:test) do |test|
 end
 
 task :default => :test
-
-require 'rake/rdoctask'
-Rake::RDocTask.new do |rdoc|
-  if File.exist?('VERSION.yml')
-    config = YAML.load(File.read('VERSION.yml'))
-    version = "#{config[:major]}.#{config[:minor]}.#{config[:patch]}"
-  else
-    version = ""
-  end
-
-  rdoc.rdoc_dir = 'rdoc'
-  rdoc.title = "greenstripes #{version}"
-  rdoc.rdoc_files.include('README*')
-  rdoc.rdoc_files.include('lib/**/*.rb')
-end
