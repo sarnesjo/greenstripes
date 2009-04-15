@@ -1,7 +1,7 @@
-= greenstripes
+# greenstripes
 
 Description goes here.
 
-== Copyright
+## Copyright
 
 Copyright (c) 2009 Jesper Särnesjö. See LICENSE for details.
