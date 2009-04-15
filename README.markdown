@@ -65,6 +65,18 @@ using `Array#pack`, like this:
 
     APPLICATION_KEY = [0x00, ..., 0x00].pack('C*')
 
+## Caveats
+
+GreenStripes is not stable or complete in any way. Please be aware that the API
+may change rapidly, and that it currently lacks much of the functionality in
+libspotify.
+
+Currently, GreenStripes provides mapping for all libspotify datatypes, functions
+and constants, except those dealing with audio or images. It also lacks callback
+support of any kind. It probably leaks memory, it is not thread-safe, and its
+test coverage is incomplete. Hopefully, all of these issues will be solved in
+the near future.
+
 ## Copyright
 
 Copyright (c) 2009 Jesper Särnesjö. See LICENSE for details.
