@@ -79,4 +79,6 @@ the near future.
 
 ## Copyright
 
-Copyright (c) 2009 Jesper Särnesjö. See LICENSE for details.
+Copyright (c) 2009 Jesper Särnesjö. GreenStripes is available under the terms of
+the MIT license (see LICENSE for details). However, it's not good for much
+without libspotify, which comes with a much less permissive license.
