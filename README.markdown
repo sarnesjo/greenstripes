@@ -57,6 +57,14 @@ become `loaded?` methods.
 There are a few exceptions to these rules, however. For details, refer to the
 API docs.
 
+### Application keys
+
+The `Session#new` method expects as its first argument your libspotify
+application key as a binary string. An easy way of creating this string, is
+using `Array#pack`, like this:
+
+    APPLICATION_KEY = [0x00, ..., 0x00].pack('C*')
+
 ## Copyright
 
 Copyright (c) 2009 Jesper Särnesjö. See LICENSE for details.
