@@ -37,6 +37,26 @@ flag.)
 If the installation fails with about a million errors, make sure you've
 installed libspotify somewhere gcc will look, like `/usr/local`.
 
+## Working with GreenStripes
+
+GreenStripes is intended to provide a fairly straight mapping from C to Ruby.
+Since libspotify is written in a rather object-oriented way, this isn't too
+awkward.
+
+For example, functions dealing with session management in libspotify have names
+beginning with `sp_session_`, and take a `sp_session *` as their first argument.
+In GreenStripes, these functions become methods in the `Session` class, and the
+first argument becomes `self`.
+
+Class and method naming is mostly intuitive. The libspotify function
+`sp_session_process_events` becomes the method `Session#process_events`, etc.
+Some name changes have been introduced to give a more Ruby-esque feel to the
+API. For example, libspotify functions with names ending with `_is_loaded`
+become `loaded?` methods.
+
+There are a few exceptions to these rules, however. For details, refer to the
+API docs.
+
 ## Copyright
 
 Copyright (c) 2009 Jesper Särnesjö. See LICENSE for details.
