@@ -122,7 +122,7 @@ class TestGreenStripes < Test::Unit::TestCase
     assert_not_equal(0, @playlist.num_tracks)
     assert_equal(@playlist.num_tracks, @playlist.tracks.size)
     assert_not_nil(@playlist.track(0))
-    assert_equal(@playlist.track(0), @playlist.track[0])
+    assert_equal(@playlist.track(0), @playlist.tracks[0])
     @playlist.tracks.each do |t|
       assert_not_nil(t)
     end

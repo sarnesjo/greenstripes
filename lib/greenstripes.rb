@@ -41,6 +41,12 @@ module GreenStripes
     end
   end
 
+  class PlaylistContainer
+    def playlists
+      FakeArray.new(self, :playlists)
+    end
+  end
+
   class Playlist
     def to_link
       Link.new(self)
@@ -48,6 +54,10 @@ module GreenStripes
 
     def ==(other)
       self.to_link == other.to_link
+    end
+
+    def tracks
+      FakeArray.new(self, :tracks)
     end
   end
 
@@ -79,10 +89,26 @@ module GreenStripes
   class ArtistBrowse
     def initialize(*args) # :nodoc:
     end
+
+    def tracks
+      FakeArray.new(self, :tracks)
+    end
+
+    def similar_artists
+      FakeArray.new(self, :similar_artists)
+    end
   end
 
   class AlbumBrowse
     def initialize(*args) # :nodoc:
+    end
+
+    def tracks
+      FakeArray.new(self, :tracks)
+    end
+
+    def copyrights
+      FakeArray.new(self, :copyrights)
     end
   end
 
@@ -113,6 +139,10 @@ module GreenStripes
 
     def ==(other)
       self.to_link == other.to_link
+    end
+
+    def artists
+      FakeArray.new(self, :artists)
     end
   end
 
