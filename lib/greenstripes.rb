@@ -8,6 +8,30 @@ require 'greenstripes'
 
 # GreenStripes
 module GreenStripes
+  class FakeArray
+    include Enumerable
+
+    def initialize(target, objects)
+      @target = target
+      @num_objects_sym = "num_#{objects}".to_sym
+      @object_sym = objects.to_s.chop.to_sym
+    end
+
+    def size
+      @target.send(@num_objects_sym)
+    end
+
+    def [](index)
+      @target.send(@object_sym, index)
+    end
+
+    def each
+      self.size.times do |i|
+        yield self[i]
+      end
+    end
+  end
+
   class Session
     def initialize(*args) # :nodoc:
     end
@@ -37,6 +61,18 @@ module GreenStripes
 
     def ==(other)
       self.to_link == other.to_link
+    end
+
+    def artists
+      FakeArray.new(self, :artists)
+    end
+
+    def albums
+      FakeArray.new(self, :albums)
+    end
+
+    def tracks
+      FakeArray.new(self, :tracks)
     end
   end
 
