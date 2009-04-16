@@ -8,16 +8,12 @@ programs like this one:
     session = GreenStripes::Session.new(APPLICATION_KEY, 'GreenStripes', 'tmp', 'tmp')
     session.login(USERNAME, PASSWORD)
     session.process_events until session.connection_state == GreenStripes::ConnectionState::LOGGED_IN
-    
+
     search = GreenStripes::Search.new(session, 'yakety sax', 0, 100)
     session.process_events until search.loaded?
-    puts "found #{search.num_tracks} tracks"
-    if search.num_tracks > 0
-      track = search.track(0)
-      session.process_events until track.loaded? and track.artist(0).loaded?
-      puts "the first one is #{track.name} by #{track.artist(0).name}"
-    end
-    
+    puts "found #{search.tracks.size} tracks:"
+    puts search.tracks.map {|track| track.name}
+
     session.logout
     session.process_events until session.connection_state == GreenStripes::ConnectionState::LOGGED_OUT
 
