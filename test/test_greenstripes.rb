@@ -106,4 +106,35 @@ class TestGreenStripes < Test::Unit::TestCase
       assert_kind_of(GreenStripes::Link, str.to_link)
     end
   end
+
+  def test_fake_array_for_search
+    query = 'a'
+    search = GreenStripes::Search.new(@session, query, 0, 1)
+    @session.process_events until search.loaded?
+    assert_equal(GreenStripes::Error::OK, search.error)
+
+    assert_not_equal(0, search.num_artists)
+    assert_equal(search.num_artists, search.artists.size)
+    assert_not_nil(search.artist(0))
+    assert_equal(search.artist(0), search.artists[0])
+    search.artists.each do |a|
+      assert_not_nil(a)
+    end
+
+    assert_not_equal(0, search.num_albums)
+    assert_equal(search.num_albums, search.albums.size)
+    assert_not_nil(search.album(0))
+    assert_equal(search.album(0), search.albums[0])
+    search.albums.each do |a|
+      assert_not_nil(a)
+    end
+
+    assert_not_equal(0, search.num_tracks)
+    assert_equal(search.num_tracks, search.tracks.size)
+    assert_not_nil(search.track(0))
+    assert_equal(search.track(0), search.tracks[0])
+    search.tracks.each do |t|
+      assert_not_nil(t)
+    end
+  end
 end
