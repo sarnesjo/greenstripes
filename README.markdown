@@ -59,7 +59,7 @@ API docs.
 
 ### Application keys
 
-The `Session#new` method expects as its first argument your libspotify
+The `Session::new` method expects as its first argument your libspotify
 application key as a binary string. An easy way of creating this string, is
 using `Array#pack`, like this:
 
