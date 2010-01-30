@@ -527,6 +527,10 @@ static VALUE search_new(VALUE klass, VALUE session, VALUE query, VALUE offset, V
                             StringValuePtr(query),
                             FIX2INT(offset),
                             FIX2INT(count),
+                            0,
+                            100,
+                            0,
+                            100,
                             search_complete_callback,
                             NULL);
 
@@ -1322,7 +1326,7 @@ void Init_greenstripes()
   rb_define_const(module_error, "USER_BANNED", INT2FIX(SP_ERROR_USER_BANNED));
   rb_define_const(module_error, "UNABLE_TO_CONTACT_SERVER", INT2FIX(SP_ERROR_UNABLE_TO_CONTACT_SERVER));
   rb_define_const(module_error, "CLIENT_TOO_OLD", INT2FIX(SP_ERROR_CLIENT_TOO_OLD));
-  rb_define_const(module_error, "OTHER_PERMAMENT", INT2FIX(SP_ERROR_OTHER_PERMAMENT));
+  rb_define_const(module_error, "OTHER_PERMANENT", INT2FIX(SP_ERROR_CLIENT_TOO_OLD));
   rb_define_const(module_error, "BAD_USER_AGENT", INT2FIX(SP_ERROR_BAD_USER_AGENT));
   rb_define_const(module_error, "MISSING_CALLBACK", INT2FIX(SP_ERROR_MISSING_CALLBACK));
   rb_define_const(module_error, "INVALID_INDATA", INT2FIX(SP_ERROR_INVALID_INDATA));
