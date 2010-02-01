@@ -1,5 +1,43 @@
 module GreenStripes
   class Session
+    LOGGED_IN = Proc.new do |session, error|
+      #puts "logged in: #{session.inspect}, #{error}"
+      session = Session.instances[session.inspect]
+      session.login_proc.call if session && session.login_proc
+    end
+
+    LOGGED_OUT = Proc.new do |session|
+      #puts "logged out: #{session.inspect}"
+      session = Session.instances[session.inspect]
+      session.logout_proc.call if session && session.logout_proc
+    end
+
+    METADATA_UPDATED = Proc.new do |session|
+      puts "metadata updated: #{session.inspect}"
+    end
+
+    CONNECTION_ERROR = Proc.new do |session, error|
+      puts "connection error: #{session.inspect}, #{error.inspect}"
+    end
+
+    MESSAGE_TO_USER = Proc.new do |session, message|
+      #puts "message to user: #{session.inspect}, #{message.inspect}"
+      session = Session.instances[session.inspect]
+      session.message_to_user_proc.call(message) if session && session.message_to_user_proc
+    end
+
+    NOTIFY_MAIN_THREAD = Proc.new do |session|
+      puts "notify main thread: #{session.inspect}"
+    end
+
+    LOG_MESSAGE = Proc.new do |session, message|
+      puts "log message: #{session.inspect}, #{message.inspect}"
+    end
+
+    def self.instances
+      @@instances ||= {}
+    end
+
     def initialize(args = {})
       args[:cache_location]     ||= 'tmp'
       args[:settings_location]  ||= 'tmp'
@@ -7,13 +45,13 @@ module GreenStripes
       args[:user_agent]         ||= 'GreenStripes'
 
       callbacks = ::GreenStripes::FFI::SessionCallbacks.new
-      callbacks[:logged_in]           = args[:logged_in_callback]
-      callbacks[:logged_out]          = args[:logged_out_callback]
-      callbacks[:metadata_updated]    = args[:metadata_updated_callback]
-      callbacks[:connection_error]    = args[:connection_error_callback]
-      callbacks[:message_to_user]     = args[:message_to_user_callback]
-      callbacks[:notify_main_thread]  = args[:notify_main_thread_callback]
-      callbacks[:log_message]         = args[:log_message_callback]
+      callbacks[:logged_in]           = LOGGED_IN
+      callbacks[:logged_out]          = LOGGED_OUT
+      #callbacks[:metadata_updated]    = METADATA_UPDATED
+      #callbacks[:connection_error]    = CONNECTION_ERROR
+      callbacks[:message_to_user]     = MESSAGE_TO_USER
+      #callbacks[:notify_main_thread]  = NOTIFY_MAIN_THREAD
+      #callbacks[:log_message]         = LOG_MESSAGE
 
       config = ::GreenStripes::FFI::SessionConfig.new
       config[:api_version]          = 3
@@ -29,7 +67,8 @@ module GreenStripes
       raise ::GreenStripes::FFI.sp_error_message(error) unless error == :sp_error_ok
       @ptr = out.get_pointer(0)
 
-      self
+      Session.instances[@ptr.inspect] = self
+      #puts self.inspect
     end
 
     def login(username, password)
@@ -45,11 +84,26 @@ module GreenStripes
     def process_events
       int_ptr = ::FFI::MemoryPointer.new(:int)
       ::GreenStripes::FFI.sp_session_process_events(@ptr, int_ptr)
-      int_ptr.get_pointer(0)
+      # TODO: return int pointed to by int_ptr
     end
 
     def connection_state
       ::GreenStripes::FFI.sp_session_connectionstate(@ptr)
+    end
+
+    attr_accessor :login_proc
+    def on_login(&block)
+      @login_proc = Proc.new(&block)
+    end
+
+    attr_accessor :logout_proc
+    def on_logout(&block)
+      @logout_proc = Proc.new(&block)
+    end
+
+    attr_accessor :message_to_user_proc
+    def on_message_to_user(&block)
+      @message_to_user_proc = Proc.new(&block)
     end
   end
 end
