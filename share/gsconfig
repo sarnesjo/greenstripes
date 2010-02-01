@@ -1,0 +1,10 @@
+# copy to ~/.gsconfig and edit
+
+# your libspotify application key
+APPLICATION_KEY = [].pack('C*')
+
+# your spotify username
+USERNAME = ''
+
+# your spotify password
+PASSWORD = ''

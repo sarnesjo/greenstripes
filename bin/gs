@@ -1,0 +1,29 @@
+#!/usr/bin/env ruby
+
+$:.unshift(File.join(File.dirname(__FILE__), '..', 'lib'))
+
+require 'greenstripes'
+
+load '~/.gsconfig'
+
+done = false
+
+session = GreenStripes::Session.new(:application_key => APPLICATION_KEY)
+
+session.on_login do
+  puts 'alright, logged in!'
+  session.logout
+end
+
+session.on_logout do
+  puts 'and logged out again'
+  done = true
+end
+
+session.on_message_to_user do |message|
+  puts message
+end
+
+session.login(USERNAME, PASSWORD)
+
+session.process_events until done
