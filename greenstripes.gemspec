@@ -15,5 +15,5 @@ Gem::Specification.new do |s|
 
   s.has_rdoc          = true
 
-  # TODO: dependencies
+  s.add_dependency('ffi', '>= 0.5.4')
 end
