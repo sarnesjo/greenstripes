@@ -25,10 +25,7 @@ compiling and running one of the example programs that come with libspotify.
 
 The easiest way of installing GreenStripes is via RubyGems:
 
-    $ sudo gem install sarnesjo-greenstripes --source http://gems.github.com
-
-(If you've already added GitHub as a gem source, you can skip the `--source`
-flag.)
+    $ sudo gem install greenstripes
 
 If the installation fails with about a million errors, make sure you've
 installed libspotify somewhere gcc will look, like `/usr/local`.
